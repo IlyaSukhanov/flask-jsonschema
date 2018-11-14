@@ -1,86 +1,106 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "version": "",
-    "title": "json_oasschema",
-    "description": "Example Schema for json_oasschema"
-  },
-  "paths": {
-    "/books/{isbn}": {
-      "put": {
-        "operationId": "PUT_book",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/oasschema_book"
+    "swagger": "2.0",
+    "info": {
+        "version": "",
+        "title": "json_oasschema",
+        "description": "Example Schema for json_oasschema"
+    },
+    "paths": {
+        "/books/{isbn}": {
+            "put": {
+                "operationId": "PUT_book",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/oasschema_book"
+                        }
+                    }
+                ],
+                "responses": {
+                    "default": {
+                        "description": "",
+                        "schema": {}
+                    }
+                }
             }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "",
-            "schema": {}
-          }
-        }
-      }
-    },
-    "/books/by-title": {
-      "get": {
-        "operationId": "GET_books_title",
-        "parameters": [
-          {
-            "name": "title",
-            "in": "query",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "",
-            "schema": {}
-          }
-        }
-      }
-    },
-    "/books/by-author": {
-      "get": {
-        "operationId": "GET_books_author",
-        "parameters": [
-          {
-            "name": "author",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "",
-            "schema": {}
-          }
-        }
-      }
-    }
-  },
-  "definitions": {
-    "oasschema_book": {
-      "title": "oasschema_book",
-      "type": "object",
-      "properties": {
-        "title": {
-          "type": "string"
         },
-        "author": {
-          "type": "string"
+        "/books/id/{book_uuid}": {
+            "parameters": [
+                {
+                    "name": "book_uuid",
+                    "in": "path",
+                    "required": true,
+                    "type": "string",
+                    "format": "uuid"
+                }
+            ],
+            "get": {
+                "operationId": "GET_book",
+                "responses": {
+                    "default": {
+                        "description": "",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/books/by-title": {
+            "get": {
+                "operationId": "GET_books_title",
+                "parameters": [
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "default": {
+                        "description": "",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/books/by-author": {
+            "get": {
+                "operationId": "GET_books_author",
+                "parameters": [
+                    {
+                        "name": "author",
+                        "in": "query",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "default": {
+                        "description": "",
+                        "schema": {}
+                    }
+                }
+            }
         }
-      },
-      "required": [
-        "title",
-        "author"
-      ]
+    },
+    "definitions": {
+        "oasschema_book": {
+            "title": "oasschema_book",
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "title",
+                "author"
+            ]
+        }
     }
-  }
 }

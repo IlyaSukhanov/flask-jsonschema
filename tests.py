@@ -1,7 +1,11 @@
 import os
 import unittest
+from uuid import uuid4
 
-import simplejson as json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from flask import Flask
 from flask_oasschema import OASSchema, validate_request, ValidationError
@@ -14,7 +18,13 @@ jsonschema = OASSchema(app)
 
 @app.route('/books/<isbn>', methods=['PUT'])
 @validate_request()
-def books_post(isbn):
+def book_post(isbn):
+    return 'success'
+
+
+@app.route('/books/id/<book_uuid>', methods=['GET'])
+@validate_request()
+def book_get_by_id(book_uuid):
     return 'success'
 
 
@@ -81,5 +91,23 @@ class JsonSchemaTests(unittest.TestCase):
     def test_no_param_get(self):
         r = client.get(
             '/books/by-author'
+        )
+        self.assertIn(b'success', r.data)
+
+    def test_path_param_invalid(self):
+        r = client.get(
+            '/books/id/not-a-uuid',
+            query_string={
+                'title': '1234'
+            }
+        )
+        self.assertIn(b'error', r.data)
+
+    def test_path_param_valid(self):
+        r = client.get(
+            '/books/id/{}'.format(uuid4()),
+            query_string={
+                'title': '1234'
+            }
         )
         self.assertIn(b'success', r.data)

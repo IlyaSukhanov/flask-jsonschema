@@ -10,7 +10,7 @@ from setuptools import setup
 
 setup(
     name='Flask-OASSchema',
-    version='0.9.5',
+    version='0.9.6',
     url='https://github.com/IlyaSukhanov/flask-oasschema',
     license='MIT',
     author='Ilya Sukhanov',

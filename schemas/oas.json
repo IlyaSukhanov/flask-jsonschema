@@ -83,6 +83,31 @@
                     }
                 }
             }
+        },
+        "/books/by-author/{author}": {
+            "get": {
+                "operationId": "GET_books_author_filter",
+                "parameters": [
+                    {
+                        "name": "author",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "default": {
+                        "description": "",
+                        "schema": {}
+                    }
+                }
+            }
         }
     },
     "definitions": {

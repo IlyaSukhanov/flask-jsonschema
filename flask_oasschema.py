@@ -76,15 +76,16 @@ def extract_body_schema(schema, uri_path, method):
 
 def extract_query_schema(parameters):
 
+    query_params = [param for param in parameters if param.get("in", "") == "query"]
     schema = {
         "type": "object",
         "properties": {
             parameter["name"]: schema_property(parameter)
-            for parameter in parameters if parameter.get("in", "") == "query"
+            for parameter in query_params
         },
         "required": [
             parameter["name"]
-            for parameter in parameters if parameter.get("required", False)
+            for parameter in query_params if parameter.get("required", False)
         ]
     }
 
@@ -96,15 +97,16 @@ def extract_query_schema(parameters):
 
 def extract_path_schema(parameters):
 
+    path_params = [param for param in parameters if param.get("in", "") == "path"]
     schema = {
         "type": "object",
         "properties": {
             parameter["name"]: schema_property(parameter)
-            for parameter in parameters if parameter.get("in", "") == "path"
+            for parameter in path_params
         },
         "required": [
             parameter["name"]
-            for parameter in parameters if parameter.get("required", False)
+            for parameter in path_params if parameter.get("required", False)
         ]
     }
 

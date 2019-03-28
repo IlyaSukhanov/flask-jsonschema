@@ -60,9 +60,6 @@ def schema_property(parameter_definition):
 
 def extract_body_schema(schema, uri_path, method):
 
-    prefix = schema.get("basePath")
-    if prefix and uri_path.startswith(prefix):
-        uri_path = uri_path[len(prefix):]
     method_parameters = schema["paths"][uri_path][method].get("parameters", [])
     if not method_parameters:
         return {}
@@ -139,8 +136,13 @@ def validate_request():
         def decorated(*args, **kwargs):
 
             uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
+
             method = request.method.lower()
             schema = current_app.extensions["oas_schema"]
+
+            prefix = schema.get("basePath")
+            if prefix and uri_path.startswith(prefix):
+                uri_path = uri_path[len(prefix):]
 
             # validate path parameters
             path_parameters = schema["paths"][uri_path].get("parameters")

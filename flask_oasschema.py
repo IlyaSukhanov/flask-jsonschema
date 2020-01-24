@@ -10,7 +10,7 @@ install_aliases()
 
 import os
 from functools import wraps
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, urlparse
 
 try:
     import simplejson as json
@@ -151,11 +151,8 @@ def validate_request():
                 validate(request.view_args, path_schema)
 
             # validate query string params
-            query = dict(parse_qsl(request.query_string))
-            query = {
-                key.decode("utf8"): convert_type(query[key])
-                for key in query
-            }
+            parsed_url = urlparse(request.url)
+            query = dict(parse_qsl(parsed_url.query))
 
             request_parameters = schema["paths"][uri_path][method].get("parameters")
             if request_parameters:

@@ -50,6 +50,7 @@ def books_by_author_and_title_filter(author):
 def on_error(e):
     return 'error'
 
+
 client = app.test_client()
 
 

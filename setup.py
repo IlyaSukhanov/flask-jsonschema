@@ -18,15 +18,23 @@ setup(
     description='Flask extension for validating JSON requests',
     long_description=__doc__,
     py_modules=['flask_oasschema'],
-    test_suite='nose.collector',
     zip_safe=False,
+    packages=['flask_oasschema'],
     platforms='any',
     install_requires=[
         'Flask>=0.9',
         'jsonschema>=1.1.0',
         'future>=0.16.0',
     ],
-    tests_require=['nose'],
+    extras_require={
+        'testing': [
+            'flake8',
+            'pytest',
+            'pyflakes',
+            'pytest-cov',
+            'coverage',
+        ],
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

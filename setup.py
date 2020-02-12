@@ -1,11 +1,9 @@
-"""
-Flask-OASchema
-----------
-
-A Flask extension for validating JSON requests against OAS type jsonschema
-
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from setuptools import setup
+
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
 
 
 setup(
@@ -16,7 +14,7 @@ setup(
     author='Ilya Sukhanov',
     author_email='ilya@sukhanov.net',
     description='Flask extension for validating JSON requests',
-    long_description=__doc__,
+    long_description=readme,
     py_modules=['flask_oasschema'],
     zip_safe=False,
     packages=['flask_oasschema'],

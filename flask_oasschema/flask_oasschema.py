@@ -11,11 +11,7 @@ install_aliases()
 import os
 from functools import wraps
 from urllib.parse import parse_qsl, urlparse
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import json
 
 from flask import current_app, request
 from jsonschema import ValidationError, validate
@@ -26,10 +22,9 @@ UUID_REGEX = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 class OASSchema(object):
 
-    def __init__(self, app=None):
+    def __init__(self, app):
         self.app = app
-        if app is not None:
-            self._state = self.init_app(app)
+        self._state = self.init_app(app)
 
     def init_app(self, app):
         default_file = os.path.join(app.root_path, "schemas", "oas.json")
@@ -60,15 +55,13 @@ def schema_property(parameter_definition):
 
 def extract_body_schema(schema, uri_path, method):
 
-    method_parameters = schema["paths"][uri_path][method].get("parameters", [])
-    if not method_parameters:
-        return {}
+    method_parameters = schema["paths"][uri_path][method].get("parameters", {})
     for parameter in method_parameters:
         if parameter.get("in", "") == "body":
             parameter["schema"]["definitions"] = schema["definitions"]
             return parameter["schema"]
 
-    raise ValidationError("Matching schema not found")
+    return {}
 
 
 def extract_query_schema(parameters):
@@ -128,9 +121,6 @@ def validate_request():
             ...
     """
     def wrapper(fn):
-
-        def convert_type(string_value):
-            return string_value.decode("utf8")
 
         @wraps(fn)
         def decorated(*args, **kwargs):

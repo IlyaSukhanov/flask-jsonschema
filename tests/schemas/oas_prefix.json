@@ -1,0 +1,46 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "",
+    "title": "json_oasschema",
+    "description": "Example Schema for json_oasschema"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Your GET endpoint",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string",
+              "pattern": "OK"
+            },
+            "examples": {}
+          }
+        },
+        "operationId": "get-health"
+      }
+    }
+  },
+  "definitions": {
+    "oasschema_book": {
+      "title": "oasschema_book",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "author"
+      ]
+    }
+  },
+  "basePath": "/v1"
+}

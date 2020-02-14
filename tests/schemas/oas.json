@@ -14,7 +14,20 @@
             "name": "body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/oasschema_book"
+              "title": "oasschema_book",
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "author"
+              ]
             }
           }
         ],
@@ -24,14 +37,21 @@
             "schema": {}
           }
         }
-      }
+      },
+      "parameters": [
+          {
+            "name": "isbn",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+      ]
     },
     "/books/id/{book_uuid}": {
       "parameters": [
         {
           "name": "book_uuid",
           "in": "path",
-          "required": true,
           "type": "string",
           "format": "uuid"
         }
@@ -117,12 +137,29 @@
           "200": {
             "description": "OK",
             "schema": {
-              "type": "object",
-              "properties": {}
-            }
+              "type": "string",
+              "pattern": "OK"
+            },
+            "examples": {}
           }
         },
         "operationId": "get-health"
+      },
+      "post": {
+        "summary": "",
+        "operationId": "post-health",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "in": "query",
+            "name": "format"
+          }
+        ]
       }
     }
   },

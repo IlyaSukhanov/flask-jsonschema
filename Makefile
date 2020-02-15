@@ -26,14 +26,9 @@ test:
 
 test-all: lint test
 
-release: clean ## package and upload a release
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
-
-dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
+publish:
+	python setup.py sdist bdist_wheel
+	twine upload dist dist/*
 
 install: clean
 	pip install . --upgrade
@@ -43,3 +38,4 @@ install-dev: clean
 
 install-dep: clean
 	pip install '.[deploy]'
+

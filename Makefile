@@ -28,7 +28,7 @@ test-all: lint test
 
 publish:
 	python setup.py sdist bdist_wheel
-	twine upload dist dist/*
+	twine upload dist/*
 
 install: clean
 	pip install . --upgrade

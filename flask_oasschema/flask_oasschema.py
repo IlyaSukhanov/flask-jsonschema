@@ -54,48 +54,22 @@ def extract_body_schema(path_schema, method):
     return {}
 
 
-def extract_query_schema(parameters):
+def extract_param_schema(param, parameters):
 
-    query_params = [
-        param
-        for param in parameters
-        if param.get("in", "") == "query"
+    schema_parameters = [
+        schema_param
+        for schema_param in parameters
+        if schema_param.get("in", "") == param
     ]
     schema = {
         "type": "object",
         "properties": {
             parameter["name"]: schema_property(parameter)
-            for parameter in query_params
+            for parameter in schema_parameters
         },
         "required": [
             parameter["name"]
-            for parameter in query_params
-            if parameter.get("required", False)
-        ]
-    }
-
-    if len(schema["required"]) == 0:
-        del schema["required"]
-
-    return schema
-
-
-def extract_path_param_schema(parameters):
-
-    path_params = [
-        param
-        for param in parameters
-        if param.get("in", "") == "path"
-    ]
-    schema = {
-        "type": "object",
-        "properties": {
-            parameter["name"]: schema_property(parameter)
-            for parameter in path_params
-        },
-        "required": [
-            parameter["name"]
-            for parameter in path_params
+            for parameter in schema_parameters
             if parameter.get("required", False)
         ]
     }
@@ -114,6 +88,10 @@ def extract_path_schema(request, schema):
         uri_path = uri_path[len(schema_prefix):]
 
     return schema["paths"][uri_path]
+
+
+def query_string_as_dict(uri):
+    return dict(parse_qsl(urlparse(request.url).query))
 
 
 def validate_request():
@@ -141,18 +119,20 @@ def validate_request():
             # validate path parameters
             path_parameters = path_schema.get("parameters")
             if path_parameters is not None:
-                path_param_schema = extract_path_param_schema(path_parameters)
-                validate(request.view_args, path_param_schema)
+                validate(
+                    request.view_args,
+                    extract_param_schema("path", path_parameters)
+                )
 
             # validate query string params
-            parsed_url = urlparse(request.url)
-            query = dict(parse_qsl(parsed_url.query))
-
             request_parameters = path_schema[method].get("parameters")
             if request_parameters:
-                query_schema = extract_query_schema(request_parameters)
-                validate(query, query_schema)
+                validate(
+                    query_string_as_dict(request.url),
+                    extract_param_schema("query", request_parameters)
+                )
 
+            # validate body
             if method in ("post", "put", "patch"):
                 validate(
                     request.get_json(),

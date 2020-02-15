@@ -24,6 +24,8 @@ lint: ## check style with flake8
 test:
 	py.test tests --cov=flask_oasschema --cov-report term-missing --cov-fail-under=100 --cov-branch
 
+test-all: lint test
+
 release: clean ## package and upload a release
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
@@ -34,10 +36,10 @@ dist: clean ## builds source and wheel package
 	ls -l dist
 
 install: clean
-	pip install .
+	pip install . --upgrade
 
 install-dev: clean
-	pip install -e '.[testing]'
+	pip install -e '.[testing]' --upgrade
 
 install-dep: clean
 	pip install '.[deploy]'

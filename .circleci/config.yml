@@ -1,0 +1,27 @@
+version: 2
+
+jobs:
+  test:
+    docker:
+      - image: python:3.8
+    steps:
+      - checkout
+      - run:
+          name: setup a venv
+          command: |
+            python3 -m venv ~/venv
+            . ~/venv/bin/activate
+            make install-dev
+      - save_cache:
+          name: Save python deps cache
+          key: deps-{{ .Branch }}-{{ checksum "setup.py" }}
+          paths:
+          - ~/venv
+      - run:
+          name: Run tests
+          command: . ~/venv/bin/activate; make test-all
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test

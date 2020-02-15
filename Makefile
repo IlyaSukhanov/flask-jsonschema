@@ -18,8 +18,12 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 
-lint: ## check style with flake8
+lint: ## check style
 	flake8 flask_oasschema tests scripts bin
+	black --check flask_oasschema/ tests/ setup.py
+
+fmt: ## Fix style errors
+	black flask_oasschema/ tests/ setup.py
 
 test:
 	py.test tests --cov=flask_oasschema --cov-report term-missing --cov-fail-under=100 --cov-branch

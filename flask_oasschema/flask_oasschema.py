@@ -12,7 +12,6 @@ UUID_REGEX = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 
 class OASSchema(object):
-
     def __init__(self, app):
         self.app = app
         self._state = self.init_app(app)
@@ -33,7 +32,8 @@ def schema_property(parameter_definition):
     schema_keys = ["type", "format", "enum", "pattern"]
     properties = {
         key: parameter_definition[key]
-        for key in parameter_definition if key in schema_keys
+        for key in parameter_definition
+        if key in schema_keys
     }
 
     # stoplight supports a uuid format which is not json schema
@@ -71,7 +71,7 @@ def extract_param_schema(param, parameters):
             parameter["name"]
             for parameter in schema_parameters
             if parameter.get("required", False)
-        ]
+        ],
     }
 
     if len(schema["required"]) == 0:
@@ -85,7 +85,7 @@ def extract_path_schema(request, schema):
 
     uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
     if schema_prefix and uri_path.startswith(schema_prefix):
-        uri_path = uri_path[len(schema_prefix):]
+        uri_path = uri_path[len(schema_prefix) :]
 
     return schema["paths"][uri_path]
 
@@ -108,8 +108,8 @@ def validate_request():
         def foo(param):
             ...
     """
-    def wrapper(fn):
 
+    def wrapper(fn):
         @wraps(fn)
         def decorated(*args, **kwargs):
             method = request.method.lower()
@@ -120,8 +120,7 @@ def validate_request():
             path_parameters = path_schema.get("parameters")
             if path_parameters is not None:
                 validate(
-                    request.view_args,
-                    extract_param_schema("path", path_parameters)
+                    request.view_args, extract_param_schema("path", path_parameters)
                 )
 
             # validate query string params
@@ -129,16 +128,15 @@ def validate_request():
             if request_parameters:
                 validate(
                     query_string_as_dict(request.url),
-                    extract_param_schema("query", request_parameters)
+                    extract_param_schema("query", request_parameters),
                 )
 
             # validate body
             if method in ("post", "put", "patch"):
-                validate(
-                    request.get_json(),
-                    extract_body_schema(path_schema, method)
-                )
+                validate(request.get_json(), extract_body_schema(path_schema, method))
 
             return fn(*args, **kwargs)
+
         return decorated
+
     return wrapper

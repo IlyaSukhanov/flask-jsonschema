@@ -1,21 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    flask_oasschema
-    ~~~~~~~~~~~~~~~~
-
-    flask_oasschema
-"""
-from future.standard_library import install_aliases
-install_aliases()
-
 import os
 from functools import wraps
 from urllib.parse import parse_qsl, urlparse
-import json
 
 import jsonref
 from flask import current_app, request
-from jsonschema import ValidationError, validate
+from jsonschema import validate
 
 
 UUID_REGEX = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
@@ -66,7 +56,11 @@ def extract_body_schema(path_schema, method):
 
 def extract_query_schema(parameters):
 
-    query_params = [param for param in parameters if param.get("in", "") == "query"]
+    query_params = [
+        param
+        for param in parameters
+        if param.get("in", "") == "query"
+    ]
     schema = {
         "type": "object",
         "properties": {
@@ -75,7 +69,8 @@ def extract_query_schema(parameters):
         },
         "required": [
             parameter["name"]
-            for parameter in query_params if parameter.get("required", False)
+            for parameter in query_params
+            if parameter.get("required", False)
         ]
     }
 
@@ -87,7 +82,11 @@ def extract_query_schema(parameters):
 
 def extract_path_param_schema(parameters):
 
-    path_params = [param for param in parameters if param.get("in", "") == "path"]
+    path_params = [
+        param
+        for param in parameters
+        if param.get("in", "") == "path"
+    ]
     schema = {
         "type": "object",
         "properties": {
@@ -96,7 +95,8 @@ def extract_path_param_schema(parameters):
         },
         "required": [
             parameter["name"]
-            for parameter in path_params if parameter.get("required", False)
+            for parameter in path_params
+            if parameter.get("required", False)
         ]
     }
 
@@ -107,13 +107,13 @@ def extract_path_param_schema(parameters):
 
 
 def extract_path_schema(request, schema):
-        schema_prefix = schema.get("basePath")
+    schema_prefix = schema.get("basePath")
 
-        uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
-        if schema_prefix and uri_path.startswith(schema_prefix):
-            uri_path = uri_path[len(schema_prefix):]
+    uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
+    if schema_prefix and uri_path.startswith(schema_prefix):
+        uri_path = uri_path[len(schema_prefix):]
 
-        return schema["paths"][uri_path]
+    return schema["paths"][uri_path]
 
 
 def validate_request():
@@ -154,7 +154,10 @@ def validate_request():
                 validate(query, query_schema)
 
             if method in ("post", "put", "patch"):
-                validate(request.get_json(), extract_body_schema(path_schema, method))
+                validate(
+                    request.get_json(),
+                    extract_body_schema(path_schema, method)
+                )
 
             return fn(*args, **kwargs)
         return decorated

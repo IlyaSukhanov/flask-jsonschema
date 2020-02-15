@@ -23,6 +23,7 @@ setup(
         'Flask>=0.9',
         'jsonschema>=1.1.0',
         'future>=0.16.0',
+        'jsonref>=0.2',
     ],
     extras_require={
         'testing': [

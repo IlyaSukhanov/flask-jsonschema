@@ -13,6 +13,7 @@ from functools import wraps
 from urllib.parse import parse_qsl, urlparse
 import json
 
+import jsonref
 from flask import current_app, request
 from jsonschema import ValidationError, validate
 
@@ -30,7 +31,7 @@ class OASSchema(object):
         default_file = os.path.join(app.root_path, "schemas", "oas.json")
         schema_path = app.config.get("OAS_FILE", default_file)
         with open(schema_path, "r") as schema_file:
-            schema = json.load(schema_file)
+            schema = jsonref.load(schema_file)
         app.extensions["oas_schema"] = schema
         return schema
 
@@ -53,12 +54,11 @@ def schema_property(parameter_definition):
     return properties
 
 
-def extract_body_schema(schema, uri_path, method):
+def extract_body_schema(path_schema, method):
 
-    method_parameters = schema["paths"][uri_path][method].get("parameters", {})
+    method_parameters = path_schema[method].get("parameters", {})
     for parameter in method_parameters:
         if parameter.get("in", "") == "body":
-            parameter["schema"]["definitions"] = schema["definitions"]
             return parameter["schema"]
 
     return {}
@@ -85,7 +85,7 @@ def extract_query_schema(parameters):
     return schema
 
 
-def extract_path_schema(parameters):
+def extract_path_param_schema(parameters):
 
     path_params = [param for param in parameters if param.get("in", "") == "path"]
     schema = {
@@ -106,6 +106,16 @@ def extract_path_schema(parameters):
     return schema
 
 
+def extract_path_schema(request, schema):
+        schema_prefix = schema.get("basePath")
+
+        uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
+        if schema_prefix and uri_path.startswith(schema_prefix):
+            uri_path = uri_path[len(schema_prefix):]
+
+        return schema["paths"][uri_path]
+
+
 def validate_request():
     """
     Validate request against JSON schema in OpenAPI Specification
@@ -124,33 +134,27 @@ def validate_request():
 
         @wraps(fn)
         def decorated(*args, **kwargs):
-
-            uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
-
             method = request.method.lower()
             schema = current_app.extensions["oas_schema"]
-
-            prefix = schema.get("basePath")
-            if prefix and uri_path.startswith(prefix):
-                uri_path = uri_path[len(prefix):]
+            path_schema = extract_path_schema(request, schema)
 
             # validate path parameters
-            path_parameters = schema["paths"][uri_path].get("parameters")
+            path_parameters = path_schema.get("parameters")
             if path_parameters is not None:
-                path_schema = extract_path_schema(path_parameters)
-                validate(request.view_args, path_schema)
+                path_param_schema = extract_path_param_schema(path_parameters)
+                validate(request.view_args, path_param_schema)
 
             # validate query string params
             parsed_url = urlparse(request.url)
             query = dict(parse_qsl(parsed_url.query))
 
-            request_parameters = schema["paths"][uri_path][method].get("parameters")
+            request_parameters = path_schema[method].get("parameters")
             if request_parameters:
                 query_schema = extract_query_schema(request_parameters)
                 validate(query, query_schema)
 
             if method in ("post", "put", "patch"):
-                validate(request.get_json(), extract_body_schema(schema, uri_path, method))
+                validate(request.get_json(), extract_body_schema(path_schema, method))
 
             return fn(*args, **kwargs)
         return decorated

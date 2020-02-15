@@ -14,20 +14,7 @@
             "name": "body",
             "in": "body",
             "schema": {
-              "title": "oasschema_book",
-              "type": "object",
-              "properties": {
-                "title": {
-                  "type": "string"
-                },
-                "author": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "title",
-                "author"
-              ]
+              "$ref": "#/definitions/oasschema_book"
             }
           }
         ],

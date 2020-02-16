@@ -15,10 +15,30 @@
             "in": "body",
             "schema": {
               "$ref": "#/definitions/oasschema_book"
-            }
+            },
+            "description": ""
           }
         ],
         "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "uuid": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "status",
+                "uuid"
+              ]
+            }
+          },
           "default": {
             "description": "",
             "schema": {}
@@ -26,12 +46,12 @@
         }
       },
       "parameters": [
-          {
-            "name": "isbn",
-            "in": "path",
-            "type": "string",
-            "required": true
-          }
+        {
+          "type": "string",
+          "name": "isbn",
+          "in": "path",
+          "required": true
+        }
       ]
     },
     "/books/id/{book_uuid}": {
@@ -46,9 +66,11 @@
       "get": {
         "operationId": "GET_book",
         "responses": {
-          "default": {
-            "description": "",
-            "schema": {}
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/oasschema_book"
+            }
           }
         }
       }
@@ -67,7 +89,12 @@
         "responses": {
           "default": {
             "description": "",
-            "schema": {}
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/oasschema_book"
+              }
+            }
           }
         }
       }

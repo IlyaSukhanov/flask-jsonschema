@@ -2,12 +2,14 @@
 import os
 from functools import wraps
 from urllib.parse import parse_qsl, urlparse
+import logging
 
 import jsonref
 from flask import current_app, request
 from jsonschema import validate, ValidationError
 
 
+logger = logging.getLogger(__name__)
 UUID_REGEX = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 
@@ -86,19 +88,29 @@ def extract_path_schema(request, schema):
     uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
     if schema_prefix and uri_path.startswith(schema_prefix):
         uri_path = uri_path[len(schema_prefix) :]
-    return schema["paths"][uri_path]
+    return schema["paths"].get(uri_path, {})
+
+
+class ValidationResponseError(ValidationError):
+    pass
 
 
 def extract_response_schema(path_schema, method, code):
-    # TODO what if method does not exist?
-    # TODO also what if response schema does not exist at all?
-    # TODO what if code/default don't map to anything?
     # TODO header validation
-    response_schemas = path_schema[method].get("responses", {})
+    try:
+        response_schemas = path_schema[method].get("responses", {})
+    except KeyError:
+        raise ValidationResponseError("Cannot locate any response schemas.")
+
     code = str(code)
     if code in response_schemas:
         return response_schemas[code]["schema"]
-    return response_schemas["default"]["schema"]
+    try:
+        return response_schemas["default"]["schema"]
+    except KeyError:
+        raise ValidationResponseError(
+            "Cannot locate response schema matching status code."
+        )
 
 
 def query_string_as_dict(uri):
@@ -153,32 +165,39 @@ def validate_request():
     return wrapper
 
 
-class ValidationResponseError(ValidationError):
-    pass
-
-
-def validate_response():
-    """
-    """
-
+def validate_response(no_raise=False):
     def wrapper(fn):
         @wraps(fn)
         def decorated(*args, **kwargs):
-            method = request.method.lower()
-            schema = current_app.extensions["oas_schema"]
-            path_schema = extract_path_schema(request, schema)
-
-            response_body, status_code = fn(*args, **kwargs)
-
             try:
-                validate(
-                    # TODO what about non-json responses?
-                    response_body.json,
-                    extract_response_schema(path_schema, method, status_code),
-                )
-            except ValidationError as e:
-                raise ValidationResponseError(e.message)
-            return response_body, status_code
+                method = request.method.lower()
+                schema = current_app.extensions["oas_schema"]
+                path_schema = extract_path_schema(request, schema)
+
+                response = fn(*args, **kwargs)
+                if isinstance(response, tuple):
+                    response_body, status_code, *_ = response
+                else:
+                    response_body = response
+                    status_code = 200
+
+                try:
+                    try:
+                        payload = response_body.json
+                    except AttributeError:
+                        payload = response_body
+                    validate(
+                        payload,
+                        extract_response_schema(path_schema, method, status_code),
+                    )
+                except ValidationError as e:
+                    raise ValidationResponseError(e.message)
+            except ValidationResponseError:
+                if no_raise:
+                    logger.exception("Validation of response failed")
+                else:
+                    raise
+            return response
 
         return decorated
 

@@ -175,6 +175,23 @@
           }
         ]
       }
+    },
+    "/no-default-response-schema": {
+      "get": {
+        "summary": "Test scenario for no default response schema",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string",
+              "pattern": "OK"
+            },
+            "examples": {}
+          }
+        },
+        "operationId": "no-default-response-schema"
+      }
     }
   },
   "definitions": {

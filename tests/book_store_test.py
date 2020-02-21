@@ -42,6 +42,7 @@ def book_get_by_id(book_uuid):
 
 @app.route("/health", methods=["GET"])
 @validate_request()
+@validate_response()
 def book_get_health():
     return "OK"
 
@@ -69,6 +70,24 @@ def books_get_title():
 @validate_request()
 def books_by_author_and_title_filter(author):
     return "success"
+
+
+@app.route("/no-response-schema", methods=["GET"])
+@validate_response()
+def no_response_schema():
+    return "OK"
+
+
+@app.route("/no-response-schema-no-raise", methods=["GET"])
+@validate_response(no_raise=True)
+def no_response_schema_no_raise():
+    return "OK"
+
+
+@app.route("/no-default-response-schema", methods=["GET"])
+@validate_response()
+def no_default_response_schema():
+    return "OK", 400
 
 
 @app.errorhandler(ValidationError)
@@ -125,10 +144,26 @@ class JsonSchemaTests(unittest.TestCase):
     def test_no_params_get(self):
         r = client.get("/health",)
         self.assertIn(b"OK", r.data)
+        assert r.status_code == 200
 
     def test_no_params_post(self):
         r = client.post("/health",)
         self.assertIn(b"OK", r.data)
+        assert r.status_code == 200
+
+    def test_no_response_schema(self):
+        r = client.get("/no-response-schema",)
+        self.assertIn(b"response schemas", r.data)
+        assert r.status_code == 500
+
+    def test_no_response_schema_no_raise(self):
+        r = client.get("/no-response-schema-no-raise",)
+        assert r.status_code == 200
+
+    def test_no_default_response_schema(self):
+        r = client.get("/no-default-response-schema",)
+        self.assertIn(b"schema matching status code", r.data)
+        assert r.status_code == 500
 
     def test_valid_get(self):
         r = client.get(
@@ -144,6 +179,7 @@ class JsonSchemaTests(unittest.TestCase):
     def test_no_param_get(self):
         r = client.get("/books/by-author")
         self.assertIn(b"success", r.data)
+        assert r.status_code == 200
 
     def test_path_param_invalid(self):
         r = client.get("/books/id/not-a-uuid", query_string={"title": "1234"})

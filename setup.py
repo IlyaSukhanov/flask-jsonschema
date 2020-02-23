@@ -8,7 +8,7 @@ with open("README.rst") as readme_file:
 
 setup(
     name="Flask-OASSchema",
-    version="0.9.14",
+    version="0.9.15",
     url="https://github.com/IlyaSukhanov/flask-oasschema",
     license="MIT",
     author="Ilya Sukhanov",

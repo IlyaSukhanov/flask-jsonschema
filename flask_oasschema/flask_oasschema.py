@@ -3,6 +3,7 @@ import os
 from functools import wraps
 from urllib.parse import parse_qsl, urlparse
 import logging
+import warnings
 
 import jsonref
 from flask import current_app, request
@@ -14,16 +15,27 @@ UUID_REGEX = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 
 class OASSchema(object):
-    def __init__(self, app):
-        self.app = app
-        self._state = self.init_app(app)
+    def __init__(self, *args, **kwargs):
+        self._state = self.init_app(*args, **kwargs)
 
-    def init_app(self, app):
+    def init_app(
+        self,
+        app,
+        response_emit_error=False,
+        response_emit_warning=False,
+        response_emit_log=False,
+    ):
+        self.app = app
         default_file = os.path.join(app.root_path, "schemas", "oas.json")
         schema_path = app.config.get("OAS_FILE", default_file)
         with open(schema_path, "r") as schema_file:
             schema = jsonref.load(schema_file)
-        app.extensions["oas_schema"] = schema
+        app.extensions["flask_oasschema"] = {
+            "schema": schema,
+            "response_emit_error": response_emit_error,
+            "response_emit_warning": response_emit_warning,
+            "response_emit_log": response_emit_log,
+        }
         return schema
 
     def __getattr__(self, name):
@@ -88,28 +100,28 @@ def extract_path_schema(request, schema):
     uri_path = request.url_rule.rule.replace("<", "{").replace(">", "}")
     if schema_prefix and uri_path.startswith(schema_prefix):
         uri_path = uri_path[len(schema_prefix) :]
-    return schema["paths"].get(uri_path, {})
+    return schema["paths"].get(uri_path, {}), uri_path
 
 
 class ValidationResponseError(ValidationError):
     pass
 
 
-def extract_response_schema(path_schema, method, code):
+def extract_response_schema(path_schema, method, status_code, uri_path):
     # TODO header validation
     try:
         response_schemas = path_schema[method].get("responses", {})
     except KeyError:
         raise ValidationResponseError("Cannot locate any response schemas.")
 
-    code = str(code)
-    if code in response_schemas:
-        return response_schemas[code]["schema"]
+    status_code = str(status_code)
     try:
+        if status_code in response_schemas:
+            return response_schemas[status_code]["schema"]
         return response_schemas["default"]["schema"]
     except KeyError:
         raise ValidationResponseError(
-            "Cannot locate response schema matching status code."
+            f"Cannot locate response schema matching {uri_path}:{method}:{status_code}"
         )
 
 
@@ -136,8 +148,8 @@ def validate_request():
         @wraps(fn)
         def decorated(*args, **kwargs):
             method = request.method.lower()
-            schema = current_app.extensions["oas_schema"]
-            path_schema = extract_path_schema(request, schema)
+            schema = current_app.extensions["flask_oasschema"]["schema"]
+            path_schema, _ = extract_path_schema(request, schema)
 
             # validate path parameters
             path_parameters = path_schema.get("parameters")
@@ -165,14 +177,15 @@ def validate_request():
     return wrapper
 
 
-def validate_response(no_raise=False):
+def validate_response(emit_error=None, emit_warning=None, emit_log=None):
     def wrapper(fn):
         @wraps(fn)
         def decorated(*args, **kwargs):
+            settings = current_app.extensions["flask_oasschema"]
             try:
                 method = request.method.lower()
-                schema = current_app.extensions["oas_schema"]
-                path_schema = extract_path_schema(request, schema)
+                schema = settings["schema"]
+                path_schema, uri_path = extract_path_schema(request, schema)
 
                 response = fn(*args, **kwargs)
                 if isinstance(response, tuple):
@@ -188,14 +201,28 @@ def validate_response(no_raise=False):
                         payload = response_body
                     validate(
                         payload,
-                        extract_response_schema(path_schema, method, status_code),
+                        extract_response_schema(
+                            path_schema, method, status_code, uri_path
+                        ),
                     )
                 except ValidationError as e:
-                    raise ValidationResponseError(e.message)
-            except ValidationResponseError:
-                if no_raise:
+                    raise ValidationResponseError(
+                        f"{e.message} Endpoint: {uri_path}:{method}:{status_code} Payload: {payload}\n"
+                    )
+            except ValidationResponseError as e:
+                if emit_log if emit_log is not None else settings["response_emit_log"]:
                     logger.exception("Validation of response failed")
-                else:
+                if (
+                    emit_warning
+                    if emit_warning is not None
+                    else settings["response_emit_warning"]
+                ):
+                    warnings.warn(e.message)
+                if (
+                    emit_error
+                    if emit_error is not None
+                    else settings["response_emit_error"]
+                ):
                     raise
             return response
 

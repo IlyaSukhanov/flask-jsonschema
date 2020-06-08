@@ -2,6 +2,7 @@ import os
 import unittest
 
 from flask import Flask
+
 from flask_oasschema import OASSchema, validate_request
 
 app = Flask(__name__)

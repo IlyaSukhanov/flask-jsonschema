@@ -4,7 +4,11 @@ import unittest
 from uuid import uuid4
 import json
 
+import pytest
+
 from flask import Flask, jsonify
+
+
 from flask_oasschema import (
     OASSchema,
     validate_request,
@@ -16,7 +20,9 @@ from flask_oasschema import (
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["OAS_FILE"] = os.path.join(app.root_path, "schemas", "oas.json")
-jsonschema = OASSchema(app)
+jsonschema = OASSchema(
+    app, response_emit_warning=False, response_emit_error=False, response_emit_log=False
+)
 
 book = {
     "title": "Униженные и оскорблённые",
@@ -27,7 +33,7 @@ book = {
 
 @app.route("/books/<isbn>", methods=["PUT"])
 @validate_request()
-@validate_response()
+@validate_response(emit_error=True, emit_warning=False)
 def book_put(isbn):
     if isbn == "bad":
         return jsonify({"foo": "bar"}), 201
@@ -42,7 +48,7 @@ def book_get_by_id(book_uuid):
 
 @app.route("/health", methods=["GET"])
 @validate_request()
-@validate_response()
+@validate_response(emit_error=True)
 def book_get_health():
     return "OK"
 
@@ -61,7 +67,7 @@ def books_get_author():
 
 @app.route("/books/by-title", methods=["GET"])
 @validate_request()
-@validate_response()
+@validate_response(emit_error=True)
 def books_get_title():
     return jsonify([book]), 200
 
@@ -73,32 +79,36 @@ def books_by_author_and_title_filter(author):
 
 
 @app.route("/no-response-schema", methods=["GET"])
-@validate_response()
+@validate_response(emit_error=True)
 def no_response_schema():
     return "OK"
 
 
 @app.route("/no-response-schema-no-raise", methods=["GET"])
-@validate_response(no_raise=True)
+@validate_response()
 def no_response_schema_no_raise():
     return "OK"
 
 
 @app.route("/no-default-response-schema", methods=["GET"])
-@validate_response()
+@validate_response(emit_error=True)
 def no_default_response_schema():
+    return "OK", 400
+
+
+@app.route("/emit-all", methods=["GET"])
+@validate_response(emit_error=True, emit_warning=True, emit_log=True)
+def emit_all():
     return "OK", 400
 
 
 @app.errorhandler(ValidationError)
 def on_request_error(e):
-    print(e)
     return f"error {e}", 400
 
 
 @app.errorhandler(ValidationResponseError)
 def on_response_error(e):
-    print(e)
     return f"error {e}", 500
 
 
@@ -162,7 +172,15 @@ class JsonSchemaTests(unittest.TestCase):
 
     def test_no_default_response_schema(self):
         r = client.get("/no-default-response-schema",)
-        self.assertIn(b"schema matching status code", r.data)
+        self.assertIn(b"Cannot locate response", r.data)
+        assert r.status_code == 500
+
+    def test_emit_all(self):
+        with self.assertLogs(level="ERROR") as log:
+            with pytest.warns(UserWarning):
+                r = client.get("/emit-all",)
+            assert "Validation of response failed" in log.output[0]
+        # exception is handled @app.errorhandler(ValidationResponseError) so we assert its 500
         assert r.status_code == 500
 
     def test_valid_get(self):

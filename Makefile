@@ -19,7 +19,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style
-	flake8 flask_oasschema tests scripts bin
+	flake8 flask_oasschema tests
 	black --check flask_oasschema/ tests/ setup.py
 
 fmt: ## Fix style errors

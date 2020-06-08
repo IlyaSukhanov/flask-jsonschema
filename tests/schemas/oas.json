@@ -192,6 +192,23 @@
         },
         "operationId": "no-default-response-schema"
       }
+    },
+    "/emit-all": {
+      "get": {
+        "summary": "Test scenario for all mode of reporting response error",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string",
+              "pattern": "OK"
+            },
+            "examples": {}
+          }
+        },
+        "operationId": "emit-all"
+      }
     }
   },
   "definitions": {
